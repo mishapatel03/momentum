@@ -2,6 +2,7 @@ import "server-only";
 
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { connection } from "next/server";
 
 import { getPublicEnv } from "@/lib/env";
 
@@ -9,7 +10,9 @@ import type { Database } from "./database.types";
 
 /** Supabase client for Server Components, Server Actions and Route Handlers. Create one per request. */
 export async function createClient() {
-  // Read cookies first: it marks the render as request-time, so nothing below runs during prerender.
+  // Wait for a real request before anything else: auth reads cookies and checks token
+  // expiry against the clock, neither of which may run during prerendering.
+  await connection();
   const cookieStore = await cookies();
   const { NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY } = getPublicEnv();
 

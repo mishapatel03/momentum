@@ -4,6 +4,7 @@ import type { LocalDay } from "@/domain/day";
 import { toLocalDay } from "@/domain/day";
 import { targetOn } from "@/domain/targets";
 import { requireUser } from "@/features/auth/session";
+import { requestTime } from "@/lib/request-time";
 import { createClient } from "@/lib/supabase/server";
 
 export type UserSettings = {
@@ -14,6 +15,7 @@ export type UserSettings = {
 
 /** The user's settings, or null if they haven't saved any yet. */
 export async function getSettings(): Promise<UserSettings | null> {
+  const now = await requestTime();
   const user = await requireUser();
   const supabase = await createClient();
 
@@ -39,6 +41,6 @@ export async function getSettings(): Promise<UserSettings | null> {
   return {
     timezone,
     challengeStartDate: challenge_start_date as LocalDay,
-    dailyApplyTarget: targetOn(targets, toLocalDay(new Date(), timezone)),
+    dailyApplyTarget: targetOn(targets, toLocalDay(now, timezone)),
   };
 }
