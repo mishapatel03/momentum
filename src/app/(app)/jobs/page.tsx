@@ -7,6 +7,8 @@ import { PageHeader } from "@/components/page-header";
 import { InboxList } from "@/features/jobs/components/inbox-list";
 import { InboxQuickAdd } from "@/features/jobs/components/inbox-quick-add";
 import { getInboxJobs } from "@/features/jobs/queries";
+import { SavedSearches } from "@/features/saved-searches/components/saved-searches";
+import { getSavedSearches } from "@/features/saved-searches/queries";
 
 export const metadata: Metadata = {
   title: "Jobs · Momentum",
@@ -15,7 +17,16 @@ export const metadata: Metadata = {
 export default function JobsPage() {
   return (
     <>
-      <PageHeader title="Jobs" description="Save links now, apply later." />
+      <PageHeader title="Jobs" description="Find jobs, save links, apply later." />
+
+      <section aria-labelledby="find-heading" className="flex flex-col gap-4">
+        <h2 id="find-heading" className="text-lg font-semibold">
+          Find jobs
+        </h2>
+        <Suspense fallback={<p className="text-sm text-muted-foreground">Loading searches…</p>}>
+          <SavedSearchesLoader />
+        </Suspense>
+      </section>
 
       <section aria-labelledby="inbox-heading" className="flex flex-col gap-4">
         <h2 id="inbox-heading" className="text-lg font-semibold">
@@ -35,6 +46,11 @@ export default function JobsPage() {
       </section>
     </>
   );
+}
+
+async function SavedSearchesLoader() {
+  const searches = await getSavedSearches();
+  return <SavedSearches searches={searches} />;
 }
 
 async function InboxLoader() {

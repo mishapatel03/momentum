@@ -148,6 +148,33 @@ export type Database = {
         };
         Relationships: [];
       };
+      saved_searches: {
+        Row: {
+          created_at: string;
+          id: string;
+          label: string;
+          sort_order: number;
+          url: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          label: string;
+          sort_order?: number;
+          url: string;
+          user_id?: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          label?: string;
+          sort_order?: number;
+          url?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       settings: {
         Row: {
           challenge_start_date: string;
