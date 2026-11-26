@@ -7,6 +7,7 @@ import { LogoutButton } from "@/features/auth/components/logout-button";
 import { SettingsForm } from "@/features/settings/components/settings-form";
 import { getSettings } from "@/features/settings/queries";
 import { DAILY_TARGET } from "@/features/settings/schema";
+import { requestTime } from "@/lib/request-time";
 
 export const metadata: Metadata = {
   title: "Settings · Momentum",
@@ -30,9 +31,9 @@ export default function SettingsPage() {
 }
 
 async function SettingsLoader() {
-  const settings = await getSettings();
+  const [settings, now] = await Promise.all([getSettings(), requestTime()]);
   const timezone = settings?.timezone ?? null;
-  const today = toLocalDay(new Date(), timezone ?? "UTC");
+  const today = toLocalDay(now, timezone ?? "UTC");
 
   // Built on the server so the option list is identical on server and client.
   const timezones = withUtc(Intl.supportedValuesOf("timeZone"), timezone);
