@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Suspense } from "react";
 
 import { LogoutButton } from "@/features/auth/components/logout-button";
@@ -20,6 +21,9 @@ async function SignedInAs() {
   return (
     <>
       <p className="text-muted-foreground">Signed in as {user.email}</p>
+      <Link href="/settings" className="underline underline-offset-4">
+        Settings
+      </Link>
       <LogoutButton />
     </>
   );

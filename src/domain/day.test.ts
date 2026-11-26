@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { isLocalDay, toLocalDay } from "./day";
+import { isLocalDay, isValidTimeZone, toLocalDay } from "./day";
 
 describe("toLocalDay", () => {
   it("returns the calendar day in the given timezone, not UTC", () => {
@@ -34,4 +34,14 @@ describe("isLocalDay", () => {
       expect(isLocalDay(value)).toBe(false);
     },
   );
+});
+
+describe("isValidTimeZone", () => {
+  it.each(["Asia/Kolkata", "America/New_York", "UTC"])("accepts %s", (tz) => {
+    expect(isValidTimeZone(tz)).toBe(true);
+  });
+
+  it.each(["Not/AZone", "", "Mars/Olympus"])("rejects %s", (tz) => {
+    expect(isValidTimeZone(tz)).toBe(false);
+  });
 });
