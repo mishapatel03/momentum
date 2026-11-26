@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
+import { PageHeader } from "@/components/page-header";
 import { toLocalDay } from "@/domain/day";
+import { LogoutButton } from "@/features/auth/components/logout-button";
 import { SettingsForm } from "@/features/settings/components/settings-form";
 import { getSettings } from "@/features/settings/queries";
 import { DAILY_TARGET } from "@/features/settings/schema";
@@ -12,15 +14,18 @@ export const metadata: Metadata = {
 
 export default function SettingsPage() {
   return (
-    <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-6 p-4 sm:py-10">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
-        <p className="text-muted-foreground">Set up your challenge.</p>
+    <>
+      <PageHeader title="Settings" description="Set up your challenge." />
+      <div className="max-w-lg">
+        <Suspense fallback={<p className="text-muted-foreground">Loading…</p>}>
+          <SettingsLoader />
+        </Suspense>
       </div>
-      <Suspense fallback={<p className="text-muted-foreground">Loading…</p>}>
-        <SettingsLoader />
-      </Suspense>
-    </main>
+      {/* On desktop, logout lives in the sidebar. */}
+      <div className="border-t pt-6 md:hidden">
+        <LogoutButton className="w-full" />
+      </div>
+    </>
   );
 }
 
