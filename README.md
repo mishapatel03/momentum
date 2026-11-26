@@ -18,15 +18,36 @@ npm run dev
 
 ## Scripts
 
-| Script                 | What it does                   |
-| ---------------------- | ------------------------------ |
-| `npm run dev`          | Start the dev server           |
-| `npm run build`        | Production build               |
-| `npm run lint`         | ESLint (zero warnings allowed) |
-| `npm run typecheck`    | Generate route types + `tsc`   |
-| `npm test`             | Run unit tests once            |
-| `npm run format`       | Format with Prettier           |
-| `npm run format:check` | Check formatting (used in CI)  |
+| Script                 | What it does                                   |
+| ---------------------- | ---------------------------------------------- |
+| `npm run dev`          | Start the dev server                           |
+| `npm run build`        | Production build                               |
+| `npm run lint`         | ESLint (zero warnings allowed)                 |
+| `npm run typecheck`    | Generate route types + `tsc`                   |
+| `npm test`             | Run unit tests once                            |
+| `npm run format`       | Format with Prettier                           |
+| `npm run format:check` | Check formatting (used in CI)                  |
+| `npm run db:link`      | Link the Supabase CLI to the project (once)    |
+| `npm run db:push`      | Apply new migrations to Supabase               |
+| `npm run db:types`     | Regenerate `database.types.ts` from the schema |
+
+## Database
+
+Schema lives in `supabase/migrations/`. Never edit tables in the dashboard: add a new migration instead.
+
+One-time setup:
+
+```bash
+npx supabase login
+npm run db:link        # pick the momentum project
+```
+
+After adding a migration:
+
+```bash
+npm run db:push
+npm run db:types       # commit the regenerated types
+```
 
 ## Project structure
 

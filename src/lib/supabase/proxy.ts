@@ -4,6 +4,8 @@ import { NextResponse } from "next/server";
 
 import { getPublicEnv } from "@/lib/env";
 
+import type { Database } from "./database.types";
+
 /**
  * Refreshes the auth session and returns the response to continue with,
  * plus whether the request is authenticated.
@@ -12,7 +14,7 @@ export async function updateSession(request: NextRequest) {
   const { NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY } = getPublicEnv();
   let response = NextResponse.next({ request });
 
-  const supabase = createServerClient(
+  const supabase = createServerClient<Database>(
     NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     {
