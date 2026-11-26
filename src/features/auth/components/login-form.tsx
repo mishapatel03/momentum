@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 
+import { FieldError } from "@/components/field-error";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,11 +29,7 @@ export function LoginForm() {
           aria-describedby={state.fieldErrors?.email ? "email-error" : undefined}
           required
         />
-        {state.fieldErrors?.email && (
-          <p id="email-error" className="text-sm text-destructive">
-            {state.fieldErrors.email}
-          </p>
-        )}
+        <FieldError id="email-error" message={state.fieldErrors?.email} />
       </div>
 
       <div className="flex flex-col gap-2">
@@ -46,11 +43,7 @@ export function LoginForm() {
           aria-describedby={state.fieldErrors?.password ? "password-error" : undefined}
           required
         />
-        {state.fieldErrors?.password && (
-          <p id="password-error" className="text-sm text-destructive">
-            {state.fieldErrors.password}
-          </p>
-        )}
+        <FieldError id="password-error" message={state.fieldErrors?.password} />
       </div>
 
       {state.error && (
