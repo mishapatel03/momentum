@@ -1,0 +1,14 @@
+import { z } from "zod";
+
+export const loginSchema = z.object({
+  email: z.email("Enter a valid email"),
+  password: z.string().min(1, "Enter your password"),
+});
+
+export type LoginInput = z.infer<typeof loginSchema>;
+
+export type LoginState = {
+  error?: string;
+  fieldErrors?: Partial<Record<keyof LoginInput, string>>;
+  email?: string;
+};
