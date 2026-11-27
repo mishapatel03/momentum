@@ -4,6 +4,7 @@ import { refresh } from "next/cache";
 import { z } from "zod";
 
 import { requireUser } from "@/features/auth/session";
+import { formValues, toFieldErrors } from "@/lib/forms";
 import { createClient } from "@/lib/supabase/server";
 
 import type { SavedSearchField, SavedSearchState } from "./schema";
@@ -16,18 +17,11 @@ export async function addSavedSearch(
   formData: FormData,
 ): Promise<SavedSearchState> {
   const user = await requireUser();
-  const values = {
-    label: String(formData.get("label") ?? ""),
-    url: String(formData.get("url") ?? ""),
-  };
+  const values = formValues(formData, ["label", "url"]);
 
   const parsed = savedSearchSchema.safeParse(values);
   if (!parsed.success) {
-    const fieldErrors: SavedSearchState["fieldErrors"] = {};
-    for (const issue of parsed.error.issues) {
-      fieldErrors[issue.path[0] as SavedSearchField] ??= issue.message;
-    }
-    return { status: "error", fieldErrors, values };
+    return { status: "error", fieldErrors: toFieldErrors<SavedSearchField>(parsed.error), values };
   }
 
   const supabase = await createClient();

@@ -4,10 +4,11 @@ import { refresh } from "next/cache";
 
 import { detectPlatform } from "@/domain/jobs";
 import { requireUser } from "@/features/auth/session";
+import { formValues, toFieldErrors } from "@/lib/forms";
 import { createClient } from "@/lib/supabase/server";
 
-import type { AddToInboxField, AddToInboxState } from "./schema";
-import { addToInboxSchema, jobIdSchema } from "./schema";
+import type { AddToInboxField, AddToInboxState, AppliedField, AppliedFormState } from "./schema";
+import { addAppliedJobSchema, addToInboxSchema, jobIdSchema, markAppliedSchema } from "./schema";
 
 const UNIQUE_VIOLATION = "23505";
 
@@ -17,20 +18,11 @@ export async function addToInbox(
 ): Promise<AddToInboxState> {
   const user = await requireUser();
 
-  const values = {
-    url: String(formData.get("url") ?? ""),
-    title: String(formData.get("title") ?? ""),
-    company: String(formData.get("company") ?? ""),
-  };
+  const values = formValues(formData, ["url", "title", "company"]);
 
   const parsed = addToInboxSchema.safeParse(values);
   if (!parsed.success) {
-    const fieldErrors: AddToInboxState["fieldErrors"] = {};
-    for (const issue of parsed.error.issues) {
-      const field = issue.path[0] as AddToInboxField;
-      fieldErrors[field] ??= issue.message;
-    }
-    return { status: "error", fieldErrors, values };
+    return { status: "error", fieldErrors: toFieldErrors<AddToInboxField>(parsed.error), values };
   }
 
   const { url, title, company } = parsed.data;
@@ -72,4 +64,82 @@ export async function deleteJob(jobId: string): Promise<DeleteJobResult> {
 
   refresh();
   return { ok: true };
+}
+
+const APPLY_FAILED = "Couldn't save the job. Please try again.";
+
+/** Moves an inbox job into the pipeline. The DB trigger logs the status change. */
+export async function markApplied(
+  jobId: string,
+  _prev: AppliedFormState,
+  formData: FormData,
+): Promise<AppliedFormState> {
+  const user = await requireUser();
+  const values = formValues(formData, ["title", "company", "platform"]);
+
+  const id = jobIdSchema.safeParse(jobId);
+  if (!id.success) return { status: "error", message: "Invalid job", values };
+
+  const parsed = markAppliedSchema.safeParse(values);
+  if (!parsed.success) {
+    return { status: "error", fieldErrors: toFieldErrors<AppliedField>(parsed.error), values };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("jobs")
+    .update({ ...parsed.data, status: "applied", applied_at: new Date().toISOString() })
+    .eq("id", id.data)
+    .eq("user_id", user.id)
+    .eq("status", "inbox") // only from the inbox: never re-applies or moves a pipeline job
+    .select("id");
+
+  if (error) {
+    console.error("markApplied failed", error);
+    return { status: "error", message: APPLY_FAILED, values };
+  }
+  if (data.length === 0) {
+    refresh();
+    return { status: "error", message: "This job isn't in your inbox anymore." };
+  }
+
+  refresh();
+  return { status: "success", message: "Nice! Marked as applied 🎯" };
+}
+
+/** Adds a job straight into the pipeline as applied. */
+export async function addAppliedJob(
+  _prev: AppliedFormState,
+  formData: FormData,
+): Promise<AppliedFormState> {
+  const user = await requireUser();
+  const values = formValues(formData, ["title", "company", "platform", "url"]);
+
+  const parsed = addAppliedJobSchema.safeParse(values);
+  if (!parsed.success) {
+    return { status: "error", fieldErrors: toFieldErrors<AppliedField>(parsed.error), values };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("jobs").insert({
+    ...parsed.data,
+    user_id: user.id,
+    status: "applied",
+    applied_at: new Date().toISOString(),
+  });
+
+  if (error?.code === UNIQUE_VIOLATION) {
+    return {
+      status: "error",
+      fieldErrors: { url: "This job is already saved. Mark it as applied from your inbox." },
+      values,
+    };
+  }
+  if (error) {
+    console.error("addAppliedJob failed", error);
+    return { status: "error", message: APPLY_FAILED, values };
+  }
+
+  refresh();
+  return { status: "success", message: "Nice! Application added 🎯" };
 }

@@ -1,9 +1,11 @@
-import { ExternalLink, Inbox } from "lucide-react";
+import { Check, ExternalLink, Inbox } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 import { PLATFORM_LABELS } from "../labels";
 import type { InboxJob } from "../queries";
+import { AppliedJobDialog } from "./applied-job-dialog";
 import { DeleteJobButton } from "./delete-job-button";
 
 export function InboxList({ jobs }: { jobs: InboxJob[] }) {
@@ -21,7 +23,7 @@ export function InboxList({ jobs }: { jobs: InboxJob[] }) {
       {jobs.map((job) => {
         const label = displayName(job);
         return (
-          <li key={job.id} className="flex items-center gap-3 p-3">
+          <li key={job.id} className="flex flex-col gap-2 p-3 sm:flex-row sm:items-center">
             <div className="flex min-w-0 flex-1 flex-col gap-1">
               <p className="truncate font-medium">{label}</p>
               <div className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
@@ -29,18 +31,34 @@ export function InboxList({ jobs }: { jobs: InboxJob[] }) {
                 {job.company && job.title && <span className="truncate">{job.company}</span>}
               </div>
             </div>
-            {job.url && (
-              <a
-                href={job.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground hover:text-foreground"
-                aria-label={`Open ${label}`}
-              >
-                <ExternalLink className="size-4" aria-hidden />
-              </a>
-            )}
-            <DeleteJobButton jobId={job.id} label={label} />
+            <div className="flex items-center justify-end gap-1">
+              {job.url && (
+                <a
+                  href={job.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground hover:text-foreground"
+                  aria-label={`Open ${label}`}
+                >
+                  <ExternalLink className="size-4" aria-hidden />
+                </a>
+              )}
+              <AppliedJobDialog
+                job={job}
+                trigger={
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    aria-label={`Mark ${label} as applied`}
+                  >
+                    <Check aria-hidden />
+                    Applied
+                  </Button>
+                }
+              />
+              <DeleteJobButton jobId={job.id} label={label} />
+            </div>
           </li>
         );
       })}
