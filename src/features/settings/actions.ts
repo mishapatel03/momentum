@@ -6,6 +6,7 @@ import type { LocalDay } from "@/domain/day";
 import { toLocalDay } from "@/domain/day";
 import { targetOn } from "@/domain/targets";
 import { requireUser } from "@/features/auth/session";
+import { formValues, toFieldErrors } from "@/lib/forms";
 import { createClient } from "@/lib/supabase/server";
 
 import type { SettingsFormState, SettingsInput } from "./schema";
@@ -19,22 +20,17 @@ export async function saveSettings(
 ): Promise<SettingsFormState> {
   const user = await requireUser();
 
-  const values = {
-    timezone: String(formData.get("timezone") ?? ""),
-    challengeStartDate: String(formData.get("challengeStartDate") ?? ""),
-    dailyApplyTarget: String(formData.get("dailyApplyTarget") ?? ""),
-  };
+  const values = formValues(formData, ["timezone", "challengeStartDate", "dailyApplyTarget"]);
 
   const now = new Date();
   const parsed = makeSettingsSchema(now).safeParse(values);
 
   if (!parsed.success) {
-    const fieldErrors: SettingsFormState["fieldErrors"] = {};
-    for (const issue of parsed.error.issues) {
-      const field = issue.path[0] as keyof SettingsInput;
-      fieldErrors[field] ??= issue.message;
-    }
-    return { status: "error", fieldErrors, values };
+    return {
+      status: "error",
+      fieldErrors: toFieldErrors<keyof SettingsInput>(parsed.error),
+      values,
+    };
   }
 
   const { timezone, challengeStartDate, dailyApplyTarget } = parsed.data;

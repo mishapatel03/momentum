@@ -2,29 +2,20 @@
 
 import { redirect } from "next/navigation";
 
+import { formValues, toFieldErrors } from "@/lib/forms";
 import { createClient } from "@/lib/supabase/server";
 
-import type { LoginState } from "./schema";
+import type { LoginInput, LoginState } from "./schema";
 import { loginSchema } from "./schema";
 
 const INVALID_CREDENTIALS = "Invalid email or password";
 
 export async function login(_prev: LoginState, formData: FormData): Promise<LoginState> {
-  const parsed = loginSchema.safeParse({
-    email: formData.get("email"),
-    password: formData.get("password"),
-  });
-  const email = typeof formData.get("email") === "string" ? String(formData.get("email")) : "";
+  const { email, password } = formValues(formData, ["email", "password"]);
+  const parsed = loginSchema.safeParse({ email, password });
 
   if (!parsed.success) {
-    const fieldErrors: LoginState["fieldErrors"] = {};
-    for (const issue of parsed.error.issues) {
-      const field = issue.path[0];
-      if ((field === "email" || field === "password") && !fieldErrors[field]) {
-        fieldErrors[field] = issue.message;
-      }
-    }
-    return { fieldErrors, email };
+    return { fieldErrors: toFieldErrors<keyof LoginInput>(parsed.error), email };
   }
 
   const supabase = await createClient();
