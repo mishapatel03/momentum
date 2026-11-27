@@ -19,7 +19,7 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
 
       {/* Bottom padding keeps content clear of the fixed bottom nav on mobile. */}
       <div className="flex min-w-0 flex-1 flex-col pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
-        <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 p-4 sm:p-6 md:py-10">
+        <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 p-4 sm:p-6 md:py-10">
           {children}
         </main>
       </div>
