@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { isLocalDay, isValidTimeZone, toLocalDay } from "./day";
+import type { LocalDay } from "./day";
+import { addDays, daysBetween, eachDay, isLocalDay, isValidTimeZone, toLocalDay } from "./day";
 
 describe("toLocalDay", () => {
   it("returns the calendar day in the given timezone, not UTC", () => {
@@ -43,5 +44,35 @@ describe("isValidTimeZone", () => {
 
   it.each(["Not/AZone", "", "Mars/Olympus"])("rejects %s", (tz) => {
     expect(isValidTimeZone(tz)).toBe(false);
+  });
+});
+
+const d = (value: string) => value as LocalDay;
+
+describe("day arithmetic", () => {
+  it("adds days across month and year ends", () => {
+    expect(addDays(d("2026-11-30"), 1)).toBe("2026-12-01");
+    expect(addDays(d("2026-12-31"), 1)).toBe("2027-01-01");
+    expect(addDays(d("2026-03-01"), -1)).toBe("2026-02-28");
+  });
+
+  it("isn't affected by daylight saving changes", () => {
+    // US DST ends on Nov 1, 2026; local-day maths must still step one calendar day.
+    expect(addDays(d("2026-10-31"), 1)).toBe("2026-11-01");
+    expect(daysBetween(d("2026-10-31"), d("2026-11-02"))).toBe(2);
+  });
+
+  it("counts days between, in either direction", () => {
+    expect(daysBetween(d("2026-11-26"), d("2026-12-03"))).toBe(7);
+    expect(daysBetween(d("2026-12-03"), d("2026-11-26"))).toBe(-7);
+  });
+
+  it("lists each day inclusively", () => {
+    expect(eachDay(d("2026-11-29"), d("2026-12-01"))).toEqual([
+      "2026-11-29",
+      "2026-11-30",
+      "2026-12-01",
+    ]);
+    expect(eachDay(d("2026-12-01"), d("2026-11-30"))).toEqual([]);
   });
 });
