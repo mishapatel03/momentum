@@ -9,12 +9,15 @@ import type { DayResult } from "@/domain/scoring";
 import { scoreDays } from "@/domain/scoring";
 import type { Streak } from "@/domain/streak";
 import { computeStreak } from "@/domain/streak";
+import type { Level } from "@/domain/xp";
+import { computeXp, levelFor } from "@/domain/xp";
 import { requireUser } from "@/features/auth/session";
 import type { Mood } from "@/features/checkins/schema";
 import { requestTime } from "@/lib/request-time";
 import { createClient } from "@/lib/supabase/server";
 
 import { toScoringFacts } from "./facts";
+import { countXpSources } from "./xp-sources";
 
 export type TodayProgress =
   | { kind: "needs-setup" }
@@ -32,6 +35,7 @@ export type TodayProgress =
       ghostSuggestions: GhostSuggestion[];
       streak: Streak;
       challenge: ChallengeProgress;
+      level: Level;
     };
 
 type JobSummary = { jobId: string; title: string; company: string; url: string | null };
@@ -65,7 +69,7 @@ export async function getTodayProgress(): Promise<TodayProgress> {
       .neq("status", "inbox"),
     supabase
       .from("job_events")
-      .select("job_id, type, from_status, occurred_at")
+      .select("job_id, type, from_status, to_status, occurred_at")
       .eq("user_id", user.id),
     supabase.from("checkins").select("day, mood, note").eq("user_id", user.id),
   ]);
@@ -94,6 +98,7 @@ export async function getTodayProgress(): Promise<TodayProgress> {
   );
 
   const days = scoreDays(startDay, today, facts);
+  const challenge = computeChallenge(startDay, today, days);
 
   const summaries = new Map(
     (jobs.data ?? []).map((job) => [
@@ -131,6 +136,17 @@ export async function getTodayProgress(): Promise<TodayProgress> {
     followUps,
     ghostSuggestions,
     streak: computeStreak(days),
-    challenge: computeChallenge(startDay, today, days),
+    challenge,
+    level: levelFor(
+      computeXp(
+        countXpSources({
+          pipelineJobCount: facts.jobs.length,
+          events: events.data ?? [],
+          checkInCount: checkins.data?.length ?? 0,
+          days,
+          challenge,
+        }),
+      ),
+    ),
   };
 }
