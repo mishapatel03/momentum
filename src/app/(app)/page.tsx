@@ -5,6 +5,7 @@ import { Suspense } from "react";
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
+import { CelebrationOverlay } from "@/features/progress/components/celebration-overlay";
 import { LevelBar } from "@/features/progress/components/level-bar";
 import { Missions } from "@/features/progress/components/missions";
 import { ProgressStats } from "@/features/progress/components/progress-stats";
@@ -60,6 +61,12 @@ async function TodayLoader() {
   return (
     <>
       <PageHeader title="Today" description={formatDay(progress.today)} />
+      {progress.pendingCelebration && (
+        <CelebrationOverlay
+          key={progress.pendingCelebration.start}
+          window={progress.pendingCelebration}
+        />
+      )}
       <LevelBar level={progress.level} />
       <ProgressStats streak={progress.streak} challenge={progress.challenge} />
       <Missions

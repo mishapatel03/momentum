@@ -8,6 +8,7 @@ import { CheckIn } from "@/features/checkins/components/check-in";
 import type { Mood } from "@/features/checkins/schema";
 
 import type { FollowUpItem, GhostSuggestion } from "../queries";
+import { DayCompleteBurst } from "./day-complete-burst";
 import { FollowUpList } from "./follow-up-list";
 import { MissionCard } from "./mission-card";
 
@@ -24,6 +25,7 @@ export function Missions({ day, checkIn, followUps, ghostSuggestions }: Missions
 
   return (
     <div className="flex flex-col gap-4">
+      {day.complete && <DayCompleteBurst day={day.day} />}
       {day.complete && (
         <div
           role="status"
