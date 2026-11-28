@@ -4,6 +4,7 @@ import { refresh } from "next/cache";
 
 import { detectPlatform } from "@/domain/jobs";
 import { isPipelineStatus } from "@/domain/pipeline";
+import { RULES } from "@/domain/rules";
 import { requireUser } from "@/features/auth/session";
 import { formValues, toFieldErrors } from "@/lib/forms";
 import { createClient } from "@/lib/supabase/server";
@@ -236,4 +237,49 @@ export async function updateJob(
 
   refresh();
   return { status: "success", message: "Changes saved", values };
+}
+
+export type LogFollowUpResult = { ok: true } | { ok: false; message: string };
+
+/** Records that a follow-up was sent. Only for jobs still waiting in "applied". */
+export async function logFollowUp(jobId: string): Promise<LogFollowUpResult> {
+  const user = await requireUser();
+  const id = jobIdSchema.safeParse(jobId);
+  if (!id.success) return { ok: false, message: "Invalid job" };
+
+  const supabase = await createClient();
+  const [job, sent] = await Promise.all([
+    supabase.from("jobs").select("status").eq("id", id.data).eq("user_id", user.id).maybeSingle(),
+    supabase
+      .from("job_events")
+      .select("id", { count: "exact", head: true })
+      .eq("job_id", id.data)
+      .eq("user_id", user.id)
+      .eq("type", "follow_up_sent"),
+  ]);
+
+  if (job.error || sent.error) {
+    console.error("logFollowUp: read failed", job.error ?? sent.error);
+    return { ok: false, message: "Couldn't save the follow-up. Please try again." };
+  }
+  if (!job.data) return { ok: false, message: "That job no longer exists." };
+  if (job.data.status !== "applied") {
+    return { ok: false, message: "This job already got a reply, so no follow-up is needed." };
+  }
+  // Guards against double taps: there are only so many reminders per job.
+  if ((sent.count ?? 0) >= RULES.followUpAfterDays.length) {
+    return { ok: false, message: "All follow-ups for this job are already done." };
+  }
+
+  const { error } = await supabase
+    .from("job_events")
+    .insert({ user_id: user.id, job_id: id.data, type: "follow_up_sent" });
+
+  if (error) {
+    console.error("logFollowUp failed", error);
+    return { ok: false, message: "Couldn't save the follow-up. Please try again." };
+  }
+
+  refresh();
+  return { ok: true };
 }
