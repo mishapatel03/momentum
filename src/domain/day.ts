@@ -34,3 +34,24 @@ export function isValidTimeZone(timeZone: string): boolean {
     return false;
   }
 }
+
+const MS_PER_DAY = 86_400_000;
+
+/** Calendar arithmetic on local days. Works in UTC internally, so DST never shifts a day. */
+export function addDays(day: LocalDay, amount: number): LocalDay {
+  const date = new Date(`${day}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + amount);
+  return date.toISOString().slice(0, 10) as LocalDay;
+}
+
+/** Whole days from `from` to `to` (negative if `to` is earlier). */
+export function daysBetween(from: LocalDay, to: LocalDay): number {
+  return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / MS_PER_DAY);
+}
+
+/** Every day from `from` to `to`, inclusive. Empty if `to` is before `from`. */
+export function eachDay(from: LocalDay, to: LocalDay): LocalDay[] {
+  const days: LocalDay[] = [];
+  for (let day = from; day <= to; day = addDays(day, 1)) days.push(day);
+  return days;
+}
