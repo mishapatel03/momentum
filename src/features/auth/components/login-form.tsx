@@ -1,5 +1,6 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { useActionState } from "react";
 
 import { FieldError } from "@/components/field-error";
@@ -14,9 +15,12 @@ const initialState: LoginState = {};
 
 export function LoginForm() {
   const [state, formAction, isPending] = useActionState(login, initialState);
+  // Validated again on the server; this only carries it through the form.
+  const next = useSearchParams().get("next") ?? "";
 
   return (
     <form action={formAction} className="flex flex-col gap-4" noValidate>
+      <input type="hidden" name="next" value={next} />
       <div className="flex flex-col gap-2">
         <Label htmlFor="email">Email</Label>
         <Input

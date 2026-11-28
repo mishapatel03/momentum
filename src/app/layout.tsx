@@ -17,6 +17,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Momentum",
   description: "Daily missions, streaks and progress tracking.",
+  robots: { index: false, follow: false },
 };
 
 export const viewport: Viewport = {
