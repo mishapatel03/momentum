@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 
 import { formValues, toFieldErrors } from "@/lib/forms";
+import { safeNextPath } from "@/lib/safe-redirect";
 import { createClient } from "@/lib/supabase/server";
 
 import type { LoginInput, LoginState } from "./schema";
@@ -26,7 +27,7 @@ export async function login(_prev: LoginState, formData: FormData): Promise<Logi
     return { error: INVALID_CREDENTIALS, email };
   }
 
-  redirect("/");
+  redirect(safeNextPath(formData.get("next")));
 }
 
 export async function logout(): Promise<void> {

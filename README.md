@@ -49,6 +49,16 @@ npm run db:push
 npm run db:types       # commit the regenerated types
 ```
 
+## Deployment (Vercel)
+
+1. Import the GitHub repo in Vercel (framework: Next.js, defaults are fine).
+2. Add the env vars from `.env.example` under **Settings → Environment Variables**.
+3. In Supabase → **Authentication → URL Configuration**, set **Site URL** to the Vercel URL.
+4. Every push to `main` deploys to production; every PR gets a preview URL.
+
+Security: `next.config.ts` sets clickjacking, MIME-sniffing, referrer and permissions
+headers, plus `noindex` (with `robots.txt`): it's a personal app.
+
 ## Project structure
 
 ```
