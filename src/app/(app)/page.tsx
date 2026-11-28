@@ -6,7 +6,9 @@ import { Suspense } from "react";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Missions } from "@/features/progress/components/missions";
+import { ProgressStats } from "@/features/progress/components/progress-stats";
 import { getTodayProgress } from "@/features/progress/queries";
+import { formatDay } from "@/lib/format";
 
 export const metadata: Metadata = {
   title: "Today · Momentum",
@@ -14,7 +16,7 @@ export const metadata: Metadata = {
 
 export default function TodayPage() {
   return (
-    <div className="flex max-w-2xl flex-col gap-6">
+    <div className="flex max-w-3xl flex-col gap-6">
       <Suspense fallback={<PageHeader title="Today" description="Loading your missions…" />}>
         <TodayLoader />
       </Suspense>
@@ -57,6 +59,7 @@ async function TodayLoader() {
   return (
     <>
       <PageHeader title="Today" description={formatDay(progress.today)} />
+      <ProgressStats streak={progress.streak} challenge={progress.challenge} />
       <Missions
         day={progress.todayResult}
         checkIn={progress.checkIn}
@@ -65,14 +68,4 @@ async function TodayLoader() {
       />
     </>
   );
-}
-
-/** Local days are plain calendar dates, so format them at UTC midnight to avoid shifting. */
-function formatDay(day: string): string {
-  return new Intl.DateTimeFormat("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    timeZone: "UTC",
-  }).format(new Date(`${day}T00:00:00Z`));
 }

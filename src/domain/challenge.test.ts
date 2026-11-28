@@ -109,6 +109,29 @@ describe("computeChallenge", () => {
     expect(progress.current).toMatchObject({ tasksDue: 60, tasksDone: 30, percent: 50 });
   });
 
+  it("shows a settled score over finished days only, so it doesn't dip each morning", () => {
+    // Days 1-2 perfect, today (day 3) not started yet.
+    const today = dayN(3);
+    const progress = computeChallenge(
+      START,
+      today,
+      history(today, (n) => (n < 3 ? 20 : 0)),
+    );
+    expect(progress.current.percent).toBe(66);
+    expect(progress.current.settledPercent).toBe(100);
+  });
+
+  it("has no settled score on a window's first day", () => {
+    const today = dayN(1);
+    expect(
+      computeChallenge(
+        START,
+        today,
+        history(today, () => 0),
+      ).current.settledPercent,
+    ).toBeNull();
+  });
+
   it("counts days past 30 instead of stopping", () => {
     const today = dayN(31);
     expect(

@@ -1,10 +1,14 @@
 import "server-only";
 
+import type { ChallengeProgress } from "@/domain/challenge";
+import { computeChallenge } from "@/domain/challenge";
 import type { LocalDay } from "@/domain/day";
 import { daysBetween, toLocalDay } from "@/domain/day";
 import { outstandingFollowUps, shouldSuggestGhosted } from "@/domain/followups";
 import type { DayResult } from "@/domain/scoring";
 import { scoreDays } from "@/domain/scoring";
+import type { Streak } from "@/domain/streak";
+import { computeStreak } from "@/domain/streak";
 import { requireUser } from "@/features/auth/session";
 import type { Mood } from "@/features/checkins/schema";
 import { requestTime } from "@/lib/request-time";
@@ -26,6 +30,8 @@ export type TodayProgress =
       checkIn: { mood: Mood; note: string | null } | null;
       followUps: FollowUpItem[];
       ghostSuggestions: GhostSuggestion[];
+      streak: Streak;
+      challenge: ChallengeProgress;
     };
 
 type JobSummary = { jobId: string; title: string; company: string; url: string | null };
@@ -124,5 +130,7 @@ export async function getTodayProgress(): Promise<TodayProgress> {
     checkIn: todayCheckIn ? { mood: todayCheckIn.mood, note: todayCheckIn.note } : null,
     followUps,
     ghostSuggestions,
+    streak: computeStreak(days),
+    challenge: computeChallenge(startDay, today, days),
   };
 }

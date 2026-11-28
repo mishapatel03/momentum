@@ -15,6 +15,12 @@ export type ChallengeWindow = {
   tasksDone: number;
   /** Rounded down, so 94.9% never shows as 95%. */
   percent: number;
+  /**
+   * For the active window: the score over finished days only (through yesterday), so the
+   * number shown doesn't dip every morning while today's tasks are still at zero.
+   * Null on the window's first day. Equal to `percent` for passed windows.
+   */
+  settledPercent: number | null;
 };
 
 export type ChallengeProgress = {
@@ -57,6 +63,9 @@ export function computeChallenge(
 
     if (end >= today) {
       const current = window(number, windowStart, end, extensions, "active", byDay, today);
+      const yesterday = addDays(today, -1);
+      current.settledPercent =
+        yesterday < windowStart ? null : percentOf(tally(windowStart, yesterday, byDay));
       windows.push(current);
       return {
         dayNumber: daysBetween(start, today) + 1,
@@ -80,17 +89,13 @@ function window(
   byDay: ReadonlyMap<LocalDay, DayResult>,
   scoredThrough: LocalDay,
 ): ChallengeWindow {
-  const { tasksDue, tasksDone } = tally(start, scoredThrough, byDay);
-  return {
-    number,
-    start,
-    end,
-    extensions,
-    status,
-    tasksDue,
-    tasksDone,
-    percent: tasksDue === 0 ? 0 : Math.floor((tasksDone * 100) / tasksDue),
-  };
+  const totals = tally(start, scoredThrough, byDay);
+  const percent = percentOf(totals);
+  return { number, start, end, extensions, status, ...totals, percent, settledPercent: percent };
+}
+
+function percentOf({ tasksDue, tasksDone }: { tasksDue: number; tasksDone: number }): number {
+  return tasksDue === 0 ? 0 : Math.floor((tasksDone * 100) / tasksDue);
 }
 
 function tally(from: LocalDay, to: LocalDay, byDay: ReadonlyMap<LocalDay, DayResult>) {
