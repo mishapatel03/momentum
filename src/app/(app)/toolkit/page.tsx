@@ -1,13 +1,14 @@
-import { FileText, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
-import { ComingSoon } from "@/components/coming-soon";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { AnswerDialog } from "@/features/answers/components/answer-dialog";
 import { AnswerList } from "@/features/answers/components/answer-list";
 import { getAnswers } from "@/features/answers/queries";
+import { ResumeCard } from "@/features/resume/components/resume-card";
+import { getResume } from "@/features/resume/queries";
 
 export const metadata: Metadata = {
   title: "Toolkit · Momentum",
@@ -41,7 +42,9 @@ export default function ToolkitPage() {
         <h2 id="resume-heading" className="text-lg font-semibold">
           Resume
         </h2>
-        <ComingSoon icon={FileText} text="Resume upload is coming next." />
+        <Suspense fallback={<p className="text-sm text-muted-foreground">Loading resume…</p>}>
+          <ResumeLoader />
+        </Suspense>
       </section>
     </div>
   );
@@ -50,4 +53,9 @@ export default function ToolkitPage() {
 async function AnswersLoader() {
   const answers = await getAnswers();
   return <AnswerList answers={answers} />;
+}
+
+async function ResumeLoader() {
+  const resume = await getResume();
+  return <ResumeCard resume={resume} />;
 }
