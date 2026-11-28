@@ -2,7 +2,13 @@ import { describe, expect, it } from "vitest";
 
 import type { LocalDay } from "./day";
 import type { TrackedJob } from "./followups";
-import { followUpsFor, isDoneOnTime, isOutstanding, shouldSuggestGhosted } from "./followups";
+import {
+  followUpsFor,
+  isDoneOnTime,
+  isOutstanding,
+  outstandingFollowUps,
+  shouldSuggestGhosted,
+} from "./followups";
 
 const d = (value: string) => value as LocalDay;
 
@@ -95,5 +101,19 @@ describe("shouldSuggestGhosted", () => {
     expect(shouldSuggestGhosted(job({ leftAppliedOn: d("2026-11-05") }), d("2026-12-30"))).toBe(
       false,
     );
+  });
+});
+
+describe("outstandingFollowUps", () => {
+  it("lists what's waiting across jobs, most overdue first", () => {
+    const jobs = [
+      job({ id: "recent", appliedOn: d("2026-11-05") }), // #1 due Nov 12
+      job({ id: "older", appliedOn: d("2026-11-01"), followUpsSentOn: [d("2026-11-08")] }), // #2 due Nov 15
+      job({ id: "answered", appliedOn: d("2026-11-01"), leftAppliedOn: d("2026-11-03") }),
+    ];
+    expect(outstandingFollowUps(jobs, d("2026-11-15")).map((f) => [f.jobId, f.number])).toEqual([
+      ["recent", 1],
+      ["older", 2],
+    ]);
   });
 });

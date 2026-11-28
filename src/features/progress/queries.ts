@@ -1,7 +1,8 @@
 import "server-only";
 
 import type { LocalDay } from "@/domain/day";
-import { toLocalDay } from "@/domain/day";
+import { daysBetween, toLocalDay } from "@/domain/day";
+import { outstandingFollowUps, shouldSuggestGhosted } from "@/domain/followups";
 import type { DayResult } from "@/domain/scoring";
 import { scoreDays } from "@/domain/scoring";
 import { requireUser } from "@/features/auth/session";
@@ -23,7 +24,20 @@ export type TodayProgress =
       days: DayResult[];
       todayResult: DayResult;
       checkIn: { mood: Mood; note: string | null } | null;
+      followUps: FollowUpItem[];
+      ghostSuggestions: GhostSuggestion[];
     };
+
+type JobSummary = { jobId: string; title: string; company: string; url: string | null };
+
+export type FollowUpItem = JobSummary & {
+  /** 1st or 2nd reminder. */
+  number: number;
+  /** 0 when due today. */
+  daysOverdue: number;
+};
+
+export type GhostSuggestion = JobSummary & { daysSinceApplied: number };
 
 /** Loads every fact the engine needs and scores the challenge up to today. */
 export async function getTodayProgress(): Promise<TodayProgress> {
@@ -40,7 +54,7 @@ export async function getTodayProgress(): Promise<TodayProgress> {
     supabase.from("targets").select("daily_apply_target, effective_from").eq("user_id", user.id),
     supabase
       .from("jobs")
-      .select("id, status, applied_at")
+      .select("id, title, company, url, status, applied_at")
       .eq("user_id", user.id)
       .neq("status", "inbox"),
     supabase
@@ -74,6 +88,30 @@ export async function getTodayProgress(): Promise<TodayProgress> {
   );
 
   const days = scoreDays(startDay, today, facts);
+
+  const summaries = new Map(
+    (jobs.data ?? []).map((job) => [
+      job.id,
+      {
+        jobId: job.id,
+        title: job.title ?? "Untitled job",
+        company: job.company ?? "",
+        url: job.url,
+      },
+    ]),
+  );
+  const followUps = outstandingFollowUps(facts.jobs, today).flatMap((followUp) => {
+    const summary = summaries.get(followUp.jobId);
+    return summary
+      ? [{ ...summary, number: followUp.number, daysOverdue: daysBetween(followUp.dueOn, today) }]
+      : [];
+  });
+  const ghostSuggestions = facts.jobs
+    .filter((job) => shouldSuggestGhosted(job, today))
+    .flatMap((job) => {
+      const summary = summaries.get(job.id);
+      return summary ? [{ ...summary, daysSinceApplied: daysBetween(job.appliedOn, today) }] : [];
+    });
   const todayCheckIn = (checkins.data ?? []).find((row) => row.day === today);
 
   return {
@@ -84,5 +122,7 @@ export async function getTodayProgress(): Promise<TodayProgress> {
     days,
     todayResult: days.at(-1)!,
     checkIn: todayCheckIn ? { mood: todayCheckIn.mood, note: todayCheckIn.note } : null,
+    followUps,
+    ghostSuggestions,
   };
 }

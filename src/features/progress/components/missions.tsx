@@ -7,14 +7,18 @@ import type { DayResult } from "@/domain/scoring";
 import { CheckIn } from "@/features/checkins/components/check-in";
 import type { Mood } from "@/features/checkins/schema";
 
+import type { FollowUpItem, GhostSuggestion } from "../queries";
+import { FollowUpList } from "./follow-up-list";
 import { MissionCard } from "./mission-card";
 
 type MissionsProps = {
   day: DayResult;
   checkIn: { mood: Mood; note: string | null } | null;
+  followUps: FollowUpItem[];
+  ghostSuggestions: GhostSuggestion[];
 };
 
-export function Missions({ day, checkIn }: MissionsProps) {
+export function Missions({ day, checkIn, followUps, ghostSuggestions }: MissionsProps) {
   const applyDone = day.applied >= day.target;
   const followUpsDone = day.followUpsOutstanding === 0;
 
@@ -54,16 +58,16 @@ export function Missions({ day, checkIn }: MissionsProps) {
         done={followUpsDone}
         summary={followUpsDone ? "All clear" : `${day.followUpsOutstanding} due`}
       >
-        {followUpsDone ? (
+        {followUpsDone && (
           <p className="text-sm text-muted-foreground">Nothing to follow up on today.</p>
-        ) : (
+        )}
+        {!followUpsDone && (
           <p className="text-sm text-muted-foreground">
-            {day.followUpsOutstanding === 1
-              ? "One application is"
-              : `${day.followUpsOutstanding} applications are`}{" "}
-            waiting for a nudge. Send a short follow-up to the recruiter.
+            A short, polite nudge to the recruiter works best. Tap <strong>Followed up</strong> once
+            it&apos;s sent.
           </p>
         )}
+        <FollowUpList followUps={followUps} ghostSuggestions={ghostSuggestions} />
       </MissionCard>
 
       <MissionCard

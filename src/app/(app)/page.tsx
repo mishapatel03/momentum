@@ -57,7 +57,12 @@ async function TodayLoader() {
   return (
     <>
       <PageHeader title="Today" description={formatDay(progress.today)} />
-      <Missions day={progress.todayResult} checkIn={progress.checkIn} />
+      <Missions
+        day={progress.todayResult}
+        checkIn={progress.checkIn}
+        followUps={progress.followUps}
+        ghostSuggestions={progress.ghostSuggestions}
+      />
     </>
   );
 }

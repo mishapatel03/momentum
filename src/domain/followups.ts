@@ -69,3 +69,11 @@ export function shouldSuggestGhosted(job: TrackedJob, today: LocalDay): boolean 
     job.leftAppliedOn === null && daysBetween(job.appliedOn, today) >= RULES.suggestGhostedAfterDays
   );
 }
+
+/** Every follow-up still waiting at the end of `day`, oldest due first. */
+export function outstandingFollowUps(jobs: readonly TrackedJob[], day: LocalDay): FollowUp[] {
+  return jobs
+    .flatMap(followUpsFor)
+    .filter((followUp) => isOutstanding(followUp, day))
+    .sort((a, b) => a.dueOn.localeCompare(b.dueOn));
+}
