@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { ChallengeProgress } from "@/domain/challenge";
+import type { ChallengeProgress, ChallengeWindow } from "@/domain/challenge";
 import { computeChallenge } from "@/domain/challenge";
 import type { LocalDay } from "@/domain/day";
 import { daysBetween, toLocalDay } from "@/domain/day";
@@ -36,6 +36,8 @@ export type TodayProgress =
       streak: Streak;
       challenge: ChallengeProgress;
       level: Level;
+      /** The oldest passed window whose celebration hasn't been shown yet. */
+      pendingCelebration: ChallengeWindow | null;
     };
 
 type JobSummary = { jobId: string; title: string; company: string; url: string | null };
@@ -55,7 +57,7 @@ export async function getTodayProgress(): Promise<TodayProgress> {
   const user = await requireUser();
   const supabase = await createClient();
 
-  const [settings, targets, jobs, events, checkins] = await Promise.all([
+  const [settings, targets, jobs, events, checkins, celebrationsSeen] = await Promise.all([
     supabase
       .from("settings")
       .select("timezone, challenge_start_date")
@@ -72,9 +74,10 @@ export async function getTodayProgress(): Promise<TodayProgress> {
       .select("job_id, type, from_status, to_status, occurred_at")
       .eq("user_id", user.id),
     supabase.from("checkins").select("day, mood, note").eq("user_id", user.id),
+    supabase.from("celebrations_seen").select("window_start").eq("user_id", user.id),
   ]);
 
-  for (const result of [settings, targets, jobs, events, checkins]) {
+  for (const result of [settings, targets, jobs, events, checkins, celebrationsSeen]) {
     if (result.error) throw result.error;
   }
   if (!settings.data) return { kind: "needs-setup" };
@@ -99,6 +102,9 @@ export async function getTodayProgress(): Promise<TodayProgress> {
 
   const days = scoreDays(startDay, today, facts);
   const challenge = computeChallenge(startDay, today, days);
+  const seenStarts = new Set((celebrationsSeen.data ?? []).map((row) => row.window_start));
+  const pendingCelebration =
+    challenge.windows.find((w) => w.status === "passed" && !seenStarts.has(w.start)) ?? null;
 
   const summaries = new Map(
     (jobs.data ?? []).map((job) => [
@@ -137,6 +143,7 @@ export async function getTodayProgress(): Promise<TodayProgress> {
     ghostSuggestions,
     streak: computeStreak(days),
     challenge,
+    pendingCelebration,
     level: levelFor(
       computeXp(
         countXpSources({

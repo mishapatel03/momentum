@@ -21,6 +21,7 @@ import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import type { JobPlatform } from "@/domain/jobs";
 import { detectPlatform, JOB_PLATFORMS } from "@/domain/jobs";
+import { celebrate } from "@/lib/confetti";
 
 import { addAppliedJob, markApplied } from "../actions";
 import { PLATFORM_LABELS } from "../labels";
@@ -73,6 +74,7 @@ function AppliedJobForm({ job, onDone }: { job?: InboxJobDetails; onDone: () => 
   useEffect(() => {
     if (state.status === "success") {
       toast.success(state.message);
+      void celebrate("small");
       onDone();
     }
     if (state.status === "error" && state.message) toast.error(state.message);

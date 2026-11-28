@@ -38,6 +38,30 @@ export type Database = {
         };
         Relationships: [];
       };
+      celebrations_seen: {
+        Row: {
+          id: string;
+          seen_at: string;
+          user_id: string;
+          window_number: number;
+          window_start: string;
+        };
+        Insert: {
+          id?: string;
+          seen_at?: string;
+          user_id?: string;
+          window_number: number;
+          window_start: string;
+        };
+        Update: {
+          id?: string;
+          seen_at?: string;
+          user_id?: string;
+          window_number?: number;
+          window_start?: string;
+        };
+        Relationships: [];
+      };
       checkins: {
         Row: {
           created_at: string;
