@@ -7,9 +7,13 @@ import { cn } from "@/lib/utils";
 
 import { isActive, NAV_ITEMS } from "./nav-items";
 
+/** Reads the URL, so it must render inside <Suspense>; BottomNavLinks is the static fallback. */
 export function BottomNav() {
   const pathname = usePathname();
+  return <BottomNavLinks pathname={pathname} />;
+}
 
+export function BottomNavLinks({ pathname }: { pathname: string | null }) {
   return (
     <nav
       aria-label="Main"
@@ -17,7 +21,7 @@ export function BottomNav() {
     >
       <ul className="grid grid-cols-5">
         {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
-          const active = isActive(pathname, href);
+          const active = pathname !== null && isActive(pathname, href);
           return (
             <li key={href}>
               <Link

@@ -1,4 +1,5 @@
 import { Check, ExternalLink, Inbox } from "lucide-react";
+import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,7 +26,12 @@ export function InboxList({ jobs }: { jobs: InboxJob[] }) {
         return (
           <li key={job.id} className="flex flex-col gap-2 p-3 sm:flex-row sm:items-center">
             <div className="flex min-w-0 flex-1 flex-col gap-1">
-              <p className="truncate font-medium">{label}</p>
+              <Link
+                href={`/jobs/${job.id}`}
+                className="truncate font-medium underline-offset-4 hover:underline"
+              >
+                {label}
+              </Link>
               <div className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
                 <Badge variant="secondary">{PLATFORM_LABELS[job.platform]}</Badge>
                 {job.company && job.title && <span className="truncate">{job.company}</span>}

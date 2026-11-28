@@ -7,13 +7,17 @@ import { cn } from "@/lib/utils";
 
 import { isActive, NAV_ITEMS } from "./nav-items";
 
+/** Reads the URL, so it must render inside <Suspense>; SidebarNavLinks is the static fallback. */
 export function SidebarNav() {
   const pathname = usePathname();
+  return <SidebarNavLinks pathname={pathname} />;
+}
 
+export function SidebarNavLinks({ pathname }: { pathname: string | null }) {
   return (
     <nav aria-label="Main" className="flex flex-col gap-1">
       {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
-        const active = isActive(pathname, href);
+        const active = pathname !== null && isActive(pathname, href);
         return (
           <Link
             key={href}

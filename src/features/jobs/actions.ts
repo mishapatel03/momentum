@@ -8,8 +8,21 @@ import { requireUser } from "@/features/auth/session";
 import { formValues, toFieldErrors } from "@/lib/forms";
 import { createClient } from "@/lib/supabase/server";
 
-import type { AddToInboxField, AddToInboxState, AppliedField, AppliedFormState } from "./schema";
-import { addAppliedJobSchema, addToInboxSchema, jobIdSchema, markAppliedSchema } from "./schema";
+import type {
+  AddToInboxField,
+  AddToInboxState,
+  AppliedField,
+  AppliedFormState,
+  EditJobField,
+  EditJobState,
+} from "./schema";
+import {
+  addAppliedJobSchema,
+  addToInboxSchema,
+  jobIdSchema,
+  makeEditJobSchema,
+  markAppliedSchema,
+} from "./schema";
 
 const UNIQUE_VIOLATION = "23505";
 
@@ -170,4 +183,57 @@ export async function moveJob(jobId: string, to: string): Promise<MoveJobResult>
 
   refresh();
   return { ok: true };
+}
+
+/** Saves edits to a job's details and notes. Status is changed separately (moveJob / markApplied). */
+export async function updateJob(
+  jobId: string,
+  _prev: EditJobState,
+  formData: FormData,
+): Promise<EditJobState> {
+  const user = await requireUser();
+  const values = formValues(formData, ["title", "company", "url", "platform", "notes"]);
+
+  const id = jobIdSchema.safeParse(jobId);
+  if (!id.success) return { status: "error", message: "Invalid job", values };
+
+  const supabase = await createClient();
+  // Validation depends on the current status, so read it first.
+  const { data: current, error: readError } = await supabase
+    .from("jobs")
+    .select("status")
+    .eq("id", id.data)
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (readError) {
+    console.error("updateJob: read failed", readError);
+    return { status: "error", message: "Couldn't save changes. Please try again.", values };
+  }
+  if (!current) return { status: "error", message: "That job no longer exists." };
+
+  const parsed = makeEditJobSchema(current.status).safeParse(values);
+  if (!parsed.success) {
+    return { status: "error", fieldErrors: toFieldErrors<EditJobField>(parsed.error), values };
+  }
+
+  const { error } = await supabase
+    .from("jobs")
+    .update(parsed.data)
+    .eq("id", id.data)
+    .eq("user_id", user.id);
+
+  if (error?.code === UNIQUE_VIOLATION) {
+    return {
+      status: "error",
+      fieldErrors: { url: "Another saved job already has this link" },
+      values,
+    };
+  }
+  if (error) {
+    console.error("updateJob failed", error);
+    return { status: "error", message: "Couldn't save changes. Please try again.", values };
+  }
+
+  refresh();
+  return { status: "success", message: "Changes saved", values };
 }
