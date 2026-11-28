@@ -44,3 +44,16 @@ export async function getSettings(): Promise<UserSettings | null> {
     dailyApplyTarget: targetOn(targets, toLocalDay(now, timezone)),
   };
 }
+
+/** The user's timezone, or UTC before settings are saved. */
+export async function getUserTimezone(): Promise<string> {
+  const user = await requireUser();
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("settings")
+    .select("timezone")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (error) throw error;
+  return data?.timezone ?? "UTC";
+}

@@ -3,6 +3,7 @@
 import { refresh } from "next/cache";
 
 import { detectPlatform } from "@/domain/jobs";
+import { isPipelineStatus } from "@/domain/pipeline";
 import { requireUser } from "@/features/auth/session";
 import { formValues, toFieldErrors } from "@/lib/forms";
 import { createClient } from "@/lib/supabase/server";
@@ -142,4 +143,31 @@ export async function addAppliedJob(
 
   refresh();
   return { status: "success", message: "Nice! Application added 🎯" };
+}
+
+export type MoveJobResult = { ok: true } | { ok: false; message: string };
+
+/** Moves a pipeline job to another pipeline status. The DB trigger logs the change. */
+export async function moveJob(jobId: string, to: string): Promise<MoveJobResult> {
+  const user = await requireUser();
+  const id = jobIdSchema.safeParse(jobId);
+  if (!id.success || !isPipelineStatus(to)) return { ok: false, message: "Invalid move" };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("jobs")
+    .update({ status: to })
+    .eq("id", id.data)
+    .eq("user_id", user.id)
+    .neq("status", "inbox")
+    .select("id");
+
+  if (error) {
+    console.error("moveJob failed", error);
+    return { ok: false, message: "Couldn't move the job. Please try again." };
+  }
+  if (data.length === 0) return { ok: false, message: "That job no longer exists." };
+
+  refresh();
+  return { ok: true };
 }

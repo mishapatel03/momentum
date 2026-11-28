@@ -1,14 +1,14 @@
-import { Briefcase, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
-import { ComingSoon } from "@/components/coming-soon";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { AppliedJobDialog } from "@/features/jobs/components/applied-job-dialog";
 import { InboxList } from "@/features/jobs/components/inbox-list";
 import { InboxQuickAdd } from "@/features/jobs/components/inbox-quick-add";
-import { getInboxJobs } from "@/features/jobs/queries";
+import { PipelineBoard } from "@/features/jobs/components/pipeline-board";
+import { getInboxJobs, getPipelineJobs } from "@/features/jobs/queries";
 import { SavedSearches } from "@/features/saved-searches/components/saved-searches";
 import { getSavedSearches } from "@/features/saved-searches/queries";
 
@@ -21,7 +21,7 @@ export default function JobsPage() {
     <>
       <PageHeader title="Jobs" description="Find jobs, save links, apply later." />
 
-      <section aria-labelledby="find-heading" className="flex flex-col gap-4">
+      <section aria-labelledby="find-heading" className="flex max-w-3xl flex-col gap-4">
         <h2 id="find-heading" className="text-lg font-semibold">
           Find jobs
         </h2>
@@ -30,7 +30,7 @@ export default function JobsPage() {
         </Suspense>
       </section>
 
-      <section aria-labelledby="inbox-heading" className="flex flex-col gap-4">
+      <section aria-labelledby="inbox-heading" className="flex max-w-3xl flex-col gap-4">
         <h2 id="inbox-heading" className="text-lg font-semibold">
           Inbox
         </h2>
@@ -54,7 +54,9 @@ export default function JobsPage() {
             }
           />
         </div>
-        <ComingSoon icon={Briefcase} text="The pipeline board is coming soon." />
+        <Suspense fallback={<p className="text-sm text-muted-foreground">Loading pipeline…</p>}>
+          <PipelineLoader />
+        </Suspense>
       </section>
     </>
   );
@@ -68,4 +70,9 @@ async function SavedSearchesLoader() {
 async function InboxLoader() {
   const jobs = await getInboxJobs();
   return <InboxList jobs={jobs} />;
+}
+
+async function PipelineLoader() {
+  const jobs = await getPipelineJobs();
+  return <PipelineBoard jobs={jobs} />;
 }
