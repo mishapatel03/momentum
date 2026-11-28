@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { addAppliedJobSchema, addToInboxSchema, markAppliedSchema } from "./schema";
+import {
+  addAppliedJobSchema,
+  addToInboxSchema,
+  makeEditJobSchema,
+  markAppliedSchema,
+} from "./schema";
 
 const empty = { url: "", title: "", company: "" };
 
@@ -54,5 +59,32 @@ describe("addAppliedJobSchema", () => {
     expect(addAppliedJobSchema.parse({ ...base, url: "https://acme.com/j/1/" }).url).toBe(
       "https://acme.com/j/1",
     );
+  });
+});
+
+describe("makeEditJobSchema", () => {
+  const base = { title: "", company: "", url: "", platform: "other", notes: "" };
+
+  it("lets an inbox job keep just a link", () => {
+    const result = makeEditJobSchema("inbox").safeParse({ ...base, url: "https://acme.com/j/1" });
+    expect(result.success).toBe(true);
+  });
+
+  it("requires title and company once the job is in the pipeline", () => {
+    const result = makeEditJobSchema("interview").safeParse({
+      ...base,
+      url: "https://acme.com/j/1",
+    });
+    expect(result.success ? [] : result.error.issues.map((i) => i.path[0]).sort()).toEqual([
+      "company",
+      "title",
+    ]);
+  });
+
+  it("stores empty notes as null and caps them at 5000 characters", () => {
+    const schema = makeEditJobSchema("inbox");
+    const valid = { ...base, title: "SWE" };
+    expect(schema.parse(valid).notes).toBeNull();
+    expect(schema.safeParse({ ...valid, notes: "x".repeat(5001) }).success).toBe(false);
   });
 });

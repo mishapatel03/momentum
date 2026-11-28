@@ -1,6 +1,7 @@
 "use client";
 
 import { ExternalLink } from "lucide-react";
+import Link from "next/link";
 import type { ComponentProps } from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -32,7 +33,13 @@ export function JobCard({ job, onMove, className, ...props }: JobCardProps) {
     >
       <div className="flex items-start gap-2">
         <div className="min-w-0 flex-1">
-          <p className="truncate font-medium">{job.title}</p>
+          <Link
+            href={`/jobs/${job.id}`}
+            {...stopDrag}
+            className="block truncate font-medium underline-offset-4 hover:underline"
+          >
+            {job.title}
+          </Link>
           <p className="truncate text-sm text-muted-foreground">{job.company}</p>
         </div>
         {onMove && (

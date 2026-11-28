@@ -1,7 +1,8 @@
 import Link from "next/link";
+import { Suspense } from "react";
 
-import { BottomNav } from "@/components/app-shell/bottom-nav";
-import { SidebarNav } from "@/components/app-shell/sidebar-nav";
+import { BottomNav, BottomNavLinks } from "@/components/app-shell/bottom-nav";
+import { SidebarNav, SidebarNavLinks } from "@/components/app-shell/sidebar-nav";
 import { LogoutButton } from "@/features/auth/components/logout-button";
 
 export default function AppLayout({ children }: LayoutProps<"/">) {
@@ -11,7 +12,10 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
         <Link href="/" className="px-3 text-lg font-semibold tracking-tight">
           Momentum
         </Link>
-        <SidebarNav />
+        {/* The active link depends on the URL, so it streams in; the fallback is the same nav. */}
+        <Suspense fallback={<SidebarNavLinks pathname={null} />}>
+          <SidebarNav />
+        </Suspense>
         <div className="mt-auto">
           <LogoutButton className="w-full" />
         </div>
@@ -24,7 +28,9 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
         </main>
       </div>
 
-      <BottomNav />
+      <Suspense fallback={<BottomNavLinks pathname={null} />}>
+        <BottomNav />
+      </Suspense>
     </div>
   );
 }

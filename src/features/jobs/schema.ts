@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import type { JobStatus } from "@/domain/jobs";
 import { JOB_PLATFORMS, normalizeJobUrl } from "@/domain/jobs";
 
 const optionalText = (max: number) =>
@@ -69,4 +70,33 @@ export type AppliedFormState = {
   message?: string;
   fieldErrors?: Partial<Record<AppliedField, string>>;
   values?: Partial<Record<AppliedField, string>>;
+};
+
+/**
+ * Editing a job. Mirrors the DB constraints: an inbox job needs a link or a title;
+ * once in the pipeline, title and company are required.
+ */
+export function makeEditJobSchema(status: JobStatus) {
+  const inPipeline = status !== "inbox";
+  return z
+    .object({
+      title: inPipeline ? requiredText("job title", 200) : optionalText(200),
+      company: inPipeline ? requiredText("company", 200) : optionalText(200),
+      url: optionalJobUrl,
+      platform: z.enum(JOB_PLATFORMS, { error: "Pick a platform" }),
+      notes: optionalText(5000),
+    })
+    .refine((value) => value.url !== null || value.title !== null, {
+      path: ["url"],
+      message: "Add a link or a title",
+    });
+}
+
+export type EditJobField = "title" | "company" | "url" | "platform" | "notes";
+
+export type EditJobState = {
+  status: "idle" | "success" | "error";
+  message?: string;
+  fieldErrors?: Partial<Record<EditJobField, string>>;
+  values?: Record<EditJobField, string>;
 };
